@@ -3,148 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>完整横版平台游戏</title>
+    <title>适用于手机的横版射击游戏</title>
     <style>
         body, html {
             margin: 0;
             overflow: hidden;
             height: 100%;
-            background-color: #87ceeb;
+            background-color: #1a1a1a;
         }
         canvas {
             display: block;
         }
+        #score {
+            position: absolute;
+            color: white;
+            font-size: 24px;
+            top: 10px;
+            left: 10px;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .button {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            line-height: 60px;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
+    <div id="score">得分: 0</div>
     <canvas id="gameCanvas"></canvas>
+    <div class="controls">
+        <div class="button" id="up">▲</div>
+        <div class="button" id="down">▼</div>
+        <div class="button" id="shoot">●</div>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // 游戏变量
+        let score = 0;
         let player = {
             x: 50,
-            y: canvas.height - 70,
+            y: canvas.height / 2,
             width: 50,
             height: 50,
-            speed: 5,
-            velocityY: 0,
-            isJumping: false,
-            color: 'red'
+            speed: 7,
+            bullets: []
         };
-        let gravity = 0.5;
-        let platforms = [
-            { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
-            { x: 300, y: canvas.height - 100, width: 200, height: 20 },
-            { x: 600, y: canvas.height - 150, width: 200, height: 20 }
-        ];
-        let enemies = [
-            { x: 400, y: canvas.height - 70, width: 50, height: 50, speed: 2, direction: 1 }
-        ];
-        let keys = { ArrowUp: false, ArrowRight: false, ArrowLeft: false };
-        let score = 0;
+        let enemies = [];
+        let keys = { ArrowUp: false, ArrowDown: false, Space: false };
+
+        // 触摸控制
+        document.getElementById('up').addEventListener('touchstart', () => keys.ArrowUp = true);
+        document.getElementById('up').addEventListener('touchend', () => keys.ArrowUp = false);
+        document.getElementById('down').addEventListener('touchstart', () => keys.ArrowDown = true);
+        document.getElementById('down').addEventListener('touchend', () => keys.ArrowDown = false);
+        document.getElementById('shoot').addEventListener('touchstart', () => {
+            keys.Space = true;
+            setTimeout(() => keys.Space = false, 100); // 确保只发射一颗子弹
+        });
 
         // 事件监听
         window.addEventListener('keydown', (e) => { keys[e.key] = true; });
         window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
-        // 更新玩家
         function updatePlayer() {
-            if (keys.ArrowRight) player.x += player.speed;
-            if (keys.ArrowLeft) player.x -= player.speed;
-            if (keys.ArrowUp && !player.isJumping) {
-                player.isJumping = true;
-                player.velocityY = -10;
+            if (keys.ArrowUp && player.y > 0) player.y -= player.speed;
+            if (keys.ArrowDown && player.y + player.height < canvas.height) player.y += player.speed;
+            if (keys.Space) {
+                player.bullets.push({ x: player.x + player.width, y: player.y + player.height / 2, speed: 10 });
+                keys.Space = false;
             }
 
-            // 重力效果
-            player.velocityY += gravity;
-            player.y += player.velocityY;
-
-            // 平台碰撞检测
-            platforms.forEach(platform => {
-                if (player.y + player.height >= platform.y &&
-                    player.x < platform.x + platform.width &&
-                    player.x + player.width > platform.x) {
-                    player.y = platform.y - player.height;
-                    player.isJumping = false;
-                }
+            player.bullets.forEach((bullet, index) => {
+                bullet.x += bullet.speed;
+                if (bullet.x > canvas.width) player.bullets.splice(index, 1);
             });
-
-            // 边界限制
-            if (player.y > canvas.height) {
-                player.y = canvas.height - player.height;
-                player.isJumping = false;
-            }
         }
 
-        // 更新敌人
         function updateEnemies() {
-            enemies.forEach(enemy => {
-                enemy.x += enemy.speed * enemy.direction;
-                if (enemy.x <= 0 || enemy.x + enemy.width >= canvas.width) {
-                    enemy.direction *= -1;
-                }
+            if (Math.random() < 0.02) {
+                enemies.push({ x: canvas.width, y: Math.random() * canvas.height, width: 50, height: 50, speed: 3 });
+            }
+            enemies.forEach((enemy, index) => {
+                enemy.x -= enemy.speed;
+                if (enemy.x + enemy.width < 0) enemies.splice(index, 1);
+                player.bullets.forEach((bullet, bulletIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + 5 > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + 5 > enemy.y) {
+                        enemies.splice(index, 1);
+                        player.bullets.splice(bulletIndex, 1);
+                        score += 10;
+                        document.getElementById('score').textContent = '得分: ' + score;
+                    }
+                });
 
-                // 玩家与敌人碰撞检测
                 if (player.x < enemy.x + enemy.width &&
                     player.x + player.width > enemy.x &&
                     player.y < enemy.y + enemy.height &&
                     player.y + player.height > enemy.y) {
-                    alert('游戏结束！得分：' + score);
+                    alert('游戏结束！得分: ' + score);
                     resetGame();
                 }
             });
         }
 
-        // 绘制玩家
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
+        function resetGame() {
+            player.x = 50;
+            player.y = canvas.height / 2;
+            player.bullets = [];
+            enemies = [];
+            score = 0;
+            document.getElementById('score').textContent = '得分: ' + score;
         }
 
-        // 绘制平台
-        function drawPlatforms() {
-            ctx.fillStyle = 'green';
-            platforms.forEach(platform => {
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        function drawPlayer() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = 'yellow';
+            player.bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, 10, 5);
             });
         }
 
-        // 绘制敌人
         function drawEnemies() {
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = 'red';
             enemies.forEach(enemy => {
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
             });
         }
 
-        // 绘制分数
-        function drawScore() {
-            ctx.fillStyle = 'white';
-            ctx.font = '20px Arial';
-            ctx.fillText('得分: ' + score, 10, 30);
-        }
-
-        // 重置游戏
-        function resetGame() {
-            player.x = 50;
-            player.y = canvas.height - 70;
-            score = 0;
-        }
-
-        // 游戏主循环
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             updatePlayer();
             updateEnemies();
             drawPlayer();
-            drawPlatforms();
             drawEnemies();
-            drawScore();
             requestAnimationFrame(gameLoop);
         }
 
