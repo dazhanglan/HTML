@@ -1,54 +1,40 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全国人口统计表</title>
-    <style>
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-            font-family: Arial, sans-serif;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+  <title>猜数字游戏</title>
+  <style>
+    input[type=number] {
+      width: 150px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
+  <h1>欢迎来到猜数字游戏!</h1>
+  <p>请输入一个1到100之间的数字:</p>
+  <input type="number" id="guessInput" min="1" max="100">
+  <button onclick="checkGuess()">猜!</button>
+  <p id="result"></p>
 
-    <h2 style="text-align: center;">全国人口统计表</h2>
+  <script>
+    // 生成1到100之间的随机数
+    const targetNumber = Math.floor(Math.random() * 100) + 1;
+    let attempts = 0;
 
-    <table>
-        <tr>
-            <th>省份</th>
-            <th>人口数（万）</th>
-            <th>男性人口（万）</th>
-            <th>女性人口（万）</th>
-            <th>备注</th>
-        </tr>
-        <tr>
-            <td>北京市</td>
-            <td>2154</td>
-            <td>1084</td>
-            <td>1070</td>
-            <td>--- </td>
-        </tr>
-        <tr>
-            <td>广东市</td>
-            <td>2424</td>
-            <td>1232</td>
-            <td>1192</td>
-            <td>--- </td>
-        </tr>
-        <!-- 添加更多省份 -->
-    </table>
+    function checkGuess() {
+      // 获取用户输入的数字 
+      const guess = parseInt(document.getElementById('guessInput').value);
+      attempts++;
 
+      // 检查猜测是否正确
+      if (guess === targetNumber) {
+        document.getElementById('result').innerHTML = `恭喜你,猜对了!你一共猜了${attempts}次。`;
+      } else if (guess < targetNumber) {
+        document.getElementById('result').innerHTML = '猜的数字太小了,再试试。';
+      } else {
+        document.getElementById('result').innerHTML = '猜的数字太大了,再试试。';  
+      }
+    }
+  </script>
 </body>
 </html>
