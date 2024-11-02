@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>横版平台游戏</title>
+    <title>完整横版平台游戏</title>
     <style>
         body, html {
             margin: 0;
             overflow: hidden;
             height: 100%;
-            background-color: #87ceeb; /* 天空背景 */
+            background-color: #87ceeb;
         }
         canvas {
             display: block;
@@ -25,49 +25,88 @@
         canvas.height = window.innerHeight;
 
         // 游戏变量
-        let player = { x: 50, y: 50, width: 50, height: 50, speed: 5, velocityY: 0, isJumping: false };
-        let gravity = 0.5;
-        let platforms = [{ x: 0, y: canvas.height - 20, width: canvas.width, height: 20 }];
-
-        // 控制按键
-        let keys = {
-            ArrowUp: false,
-            ArrowRight: false,
-            ArrowLeft: false
+        let player = {
+            x: 50,
+            y: canvas.height - 70,
+            width: 50,
+            height: 50,
+            speed: 5,
+            velocityY: 0,
+            isJumping: false,
+            color: 'red'
         };
+        let gravity = 0.5;
+        let platforms = [
+            { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+            { x: 300, y: canvas.height - 100, width: 200, height: 20 },
+            { x: 600, y: canvas.height - 150, width: 200, height: 20 }
+        ];
+        let enemies = [
+            { x: 400, y: canvas.height - 70, width: 50, height: 50, speed: 2, direction: 1 }
+        ];
+        let keys = { ArrowUp: false, ArrowRight: false, ArrowLeft: false };
+        let score = 0;
 
+        // 事件监听
         window.addEventListener('keydown', (e) => { keys[e.key] = true; });
         window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
+        // 更新玩家
         function updatePlayer() {
-            // 左右移动
             if (keys.ArrowRight) player.x += player.speed;
             if (keys.ArrowLeft) player.x -= player.speed;
-
-            // 重力与跳跃
-            if (player.isJumping) {
-                player.velocityY += gravity;
-                player.y += player.velocityY;
-            }
             if (keys.ArrowUp && !player.isJumping) {
                 player.isJumping = true;
                 player.velocityY = -10;
             }
 
-            // 与平台碰撞
+            // 重力效果
+            player.velocityY += gravity;
+            player.y += player.velocityY;
+
+            // 平台碰撞检测
             platforms.forEach(platform => {
-                if (player.y + player.height >= platform.y && player.x < platform.x + platform.width && player.x + player.width > platform.x) {
+                if (player.y + player.height >= platform.y &&
+                    player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x) {
                     player.y = platform.y - player.height;
                     player.isJumping = false;
                 }
             });
+
+            // 边界限制
+            if (player.y > canvas.height) {
+                player.y = canvas.height - player.height;
+                player.isJumping = false;
+            }
         }
 
+        // 更新敌人
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                enemy.x += enemy.speed * enemy.direction;
+                if (enemy.x <= 0 || enemy.x + enemy.width >= canvas.width) {
+                    enemy.direction *= -1;
+                }
+
+                // 玩家与敌人碰撞检测
+                if (player.x < enemy.x + enemy.width &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height &&
+                    player.y + player.height > enemy.y) {
+                    alert('游戏结束！得分：' + score);
+                    resetGame();
+                }
+            });
+        }
+
+        // 绘制玩家
         function drawPlayer() {
-            ctx.fillStyle = 'red';
+            ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
+        // 绘制平台
         function drawPlatforms() {
             ctx.fillStyle = 'green';
             platforms.forEach(platform => {
@@ -75,11 +114,37 @@
             });
         }
 
+        // 绘制敌人
+        function drawEnemies() {
+            ctx.fillStyle = 'black';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            });
+        }
+
+        // 绘制分数
+        function drawScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText('得分: ' + score, 10, 30);
+        }
+
+        // 重置游戏
+        function resetGame() {
+            player.x = 50;
+            player.y = canvas.height - 70;
+            score = 0;
+        }
+
+        // 游戏主循环
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             updatePlayer();
+            updateEnemies();
             drawPlayer();
             drawPlatforms();
+            drawEnemies();
+            drawScore();
             requestAnimationFrame(gameLoop);
         }
 
