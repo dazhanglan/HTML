@@ -1,40 +1,228 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>猜数字游戏</title>
-  <style>
-    input[type=number] {
-      width: 150px;
-      margin-bottom: 10px;
-    }
-  </style>
+    <title>打地鼠游戏</title>
+    <style>
+        body {
+            background: #8BC34A;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .game-container {
+            width: 600px;
+            text-align: center;
+            background: #FFF;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .score-board {
+            font-size: 24px;
+            margin: 20px;
+            color: #2196F3;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px;
+        }
+
+        .hole {
+            width: 150px;
+            height: 150px;
+            background: #795548;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .mole {
+            width: 140px;
+            height: 140px;
+            position: absolute;
+            bottom: 150px;
+            left: 5px;
+            background: #4CAF50;
+            border-radius: 50%;
+            transition: bottom 0.3s;
+        }
+
+        .mole.active {
+            bottom: 5px;
+        }
+
+        .mole:active {
+            background: #E91E63;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        .eyes {
+            position: relative;
+            top: 30px;
+        }
+
+        .eye {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        .nose {
+            width: 25px;
+            height: 25px;
+            background: #FF5722;
+            border-radius: 50%;
+            position: relative;
+            top: 40px;
+            left: 57px;
+        }
+    </style>
 </head>
 <body>
-  <h1>欢迎来到猜数字游戏!</h1>
-  <p>请输入一个1到100之间的数字:</p>
-  <input type="number" id="guessInput" min="1" max="100">
-  <button onclick="checkGuess()">猜!</button>
-  <p id="result"></p>
+    <div class="game-container">
+        <h1>打地鼠游戏</h1>
+        <div class="score-board">分数: <span id="score">0</span></div>
+        <div class="grid">
+            <div class="hole">
+                <div class="mole">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="nose"></div>
+                </div>
+            </div>
+        </div>
+        <button onclick="startGame()">开始游戏</button>
+    </div>
 
-  <script>
-    // 生成1到100之间的随机数
-    const targetNumber = Math.floor(Math.random() * 100) + 1;
-    let attempts = 0;
+    <script>
+        let score = 0;
+        let gameRunning = false;
+        const moles = document.querySelectorAll('.mole');
+        const scoreDisplay = document.getElementById('score');
 
-    function checkGuess() {
-      // 获取用户输入的数字 
-      const guess = parseInt(document.getElementById('guessInput').value);
-      attempts++;
+        moles.forEach(mole => {
+            mole.addEventListener('click', whack);
+        });
 
-      // 检查猜测是否正确
-      if (guess === targetNumber) {
-        document.getElementById('result').innerHTML = `恭喜你,猜对了!你一共猜了${attempts}次。`;
-      } else if (guess < targetNumber) {
-        document.getElementById('result').innerHTML = '猜的数字太小了,再试试。';
-      } else {
-        document.getElementById('result').innerHTML = '猜的数字太大了,再试试。';  
-      }
-    }
-  </script>
+        function whack(e) {
+            if(!gameRunning) return;
+            if(e.target.classList.contains('active')) {
+                score += 10;
+                scoreDisplay.textContent = score;
+                e.target.classList.remove('active');
+                playWhackSound();
+            }
+        }
+
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole() {
+            const index = Math.floor(Math.random() * moles.length);
+            return moles[index];
+        }
+
+        function peep() {
+            if(!gameRunning) return;
+
+            const time = randomTime(500, 1500);
+            const mole = randomHole();
+            mole.classList.add('active');
+
+            setTimeout(() => {
+                mole.classList.remove('active');
+                if(gameRunning) peep();
+            }, time);
+        }
+
+        function startGame() {
+            score = 0;
+            gameRunning = true;
+            scoreDisplay.textContent = score;
+            peep();
+
+            setTimeout(() => {
+                gameRunning = false;
+                alert(`游戏结束！你的得分是: ${score}`);
+            }, 15000);
+        }
+
+        function playWhackSound() {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+            audio.play().catch(() => {});
+        }
+    </script>
 </body>
 </html>
